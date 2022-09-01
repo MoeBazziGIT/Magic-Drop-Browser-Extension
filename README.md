@@ -149,3 +149,4 @@ ApiCall({ key: secrets.key });
 ---
 
 Michael Xieyang Liu | [Website](https://lxieyang.github.io)
+# Magic-Drop-Browser-Extension

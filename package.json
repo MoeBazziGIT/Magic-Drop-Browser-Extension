@@ -1,19 +1,21 @@
 {
-  "name": "chrome-extension-boilerplate-react",
-  "version": "4.3.5",
-  "description": "A chrome extension boilerplate built with React 17, Webpack 5, and Webpack Dev Server 4",
-  "license": "MIT",
+  "name": "magic-drop-browser-extension",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lxieyang/chrome-extension-boilerplate-react.git"
+    "url": "git+https://github.com/MoeBazziGIT/Magic-Drop-Browser-Extension.git"
   },
+  "homepage": "https://github.com/MoeBazziGIT/Magic-Drop-Browser-Extension#readme",
   "scripts": {
-    "build": "node utils/build.js",
-    "start": "node utils/webserver.js",
+    "build": "node scripts/build.js",
+    "start": "node scripts/webserver.js",
     "prettier": "prettier --write '**/*.{js,jsx,ts,tsx,json,css,scss,md}'"
   },
   "dependencies": {
     "@hot-loader/react-dom": "^17.0.2",
+    "firebase": "^9.9.3",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-hot-loader": "^4.13.0"
