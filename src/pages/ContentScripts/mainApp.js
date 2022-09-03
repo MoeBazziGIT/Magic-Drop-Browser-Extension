@@ -138,7 +138,16 @@ DetachableDOM.addEventListener(window, "dragstart", async (event) => {
       const selectedDriveFileIds = selectedDriveFileElements.map((selectedElement) => selectedElement.parentElement.dataset.id)
       const data = { ids: selectedDriveFileIds, count: selectedDriveFilesCount }
 
-      startDrag("g-drive", data)
+      // startDrag("g-drive", data)
+
+      // TEMP
+      isDragSource = true
+      // event.stopImmediatePropagation()
+      // event.stopPropagation()
+      event.dataTransfer.setDragImage(dragImg, 0, 0)
+      event.dataTransfer.setData("text/plain", "PLACEHOLDER");
+      event.dataTransfer.setData("__em__/dnd-files", JSON.stringify({ type, data }));
+      return
 
       const message = "To drag files within google drive folders, press the shift key before dragging"
       displayMessageScreen(message)
@@ -904,8 +913,6 @@ export function getDates(){
     toronto: new Date().toLocaleString('en-US', { timeZone: 'America/Toronto' })
   };
 }
-
-getSelectedDriveFileElementName()
 
 function getSelectedDriveFileElementName(selectedDriveFileElem){
   traverseDOMChildren(selectedDriveFileElem, child => {
