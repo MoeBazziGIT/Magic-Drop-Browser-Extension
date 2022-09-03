@@ -1,4 +1,5 @@
 import { DetachableDOM } from '../../utils/DetachableDOM'
+import { traverseDOMChildren } from '../../utils'
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, admin, Timestamp } from "firebase/firestore";
 
@@ -902,4 +903,20 @@ export function getDates(){
     dayUTC: dateNow.getUTCDate(),
     toronto: new Date().toLocaleString('en-US', { timeZone: 'America/Toronto' })
   };
+}
+
+getSelectedDriveFileElementName()
+
+function getSelectedDriveFileElementName(selectedDriveFileElem){
+  traverseDOMChildren(selectedDriveFileElem, child => {
+    if(child.dataset.tooltip){
+      let name = child.innerText
+      if(!name){
+        const now = new Date()
+        name = "file " + now.toLocaleString()
+      }
+      data.filesInfo[index] = { id: selectedDriveFileIds[index], name }
+      return true
+    }
+  })
 }
