@@ -19,8 +19,6 @@ chrome.runtime.onInstalled.addListener(details => {
   }
 });
 
-chrome.downloads.onDeterminingFilename.addListener(onBrowserFileDownload)
-
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   // const updatedTab = await chrome.tabs.get(activeInfo.tabId)
   const { tabId } = activeInfo
@@ -72,34 +70,53 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           foundDownloads: [],
         }
       })
-      .then(() => sendResponse(true))
+      .then(() => {
+        // listen to the browsers file download event in order to get the dragged google drive file info (ie. url, name)
+        chrome.downloads.onDeterminingFilename.addListener(function onGoogleDriveFileDownload(downloadItem, suggestName){
+          console.log("GOOGLE DRIVE FILE DOWNLOAD", downloadItem)
+          // Dont let browser download the file, cancel it and add the downloadItem to storage.gDriveFileDragOperation.foundDownloads
+          chrome.downloads.cancel(downloadItem.id, async () => {
+            chrome.downloads.erase({ id: downloadItem.id });
+            // add the downloaded file to the gDriveFileDragOperation.foundDownloads
+            LocalStorage.set((storage) => {
+              const { gDriveFileDragOperation } = storage
+              if(gDriveFileDragOperation.draggedFilesCount === gDriveFileDragOperation.foundDownloads.length + 1){
+                // if all the dragged google drive file downloads have been found (including this one), then remove the event listener
+                chrome.downloads.onDeterminingFilename.removeListener(onGoogleDriveFileDownload)
+              }
+              return { gDriveFileDragOperation: { ...gDriveFileDragOperation, foundDownloads: [...gDriveFileDragOperation.foundDownloads, downloadItem] } }
+            })
+          })
+        })
+        sendResponse(true)
+      })
       return true
     }
     if(type === "__EM__G_DRIVE_DRAG_CANCEL"){
       LocalStorage.set((storage) => ({
         gDriveFileDragOperation: {
-            ...storage.gDriveFileDragOperation,
-            cancelled: true
+          ...storage.gDriveFileDragOperation,
+          cancelled: true
         }
       }))
       return true
     }
     if(type === "GET_G_DRIVE_FOUND_DOWNLOADS"){
-        LocalStorage.get("gDriveFileDragOperation")
-            .then((gDriveFileDragOperation) => {
-                // if the not all the foundDownloads have been added yet, then wait for them to be set in the storage before sending the response
-                if(gDriveFileDragOperation && gDriveFileDragOperation.draggedFilesCount === gDriveFileDragOperation.foundDownloads.length){
-                    sendResponse(gDriveFileDragOperation.foundDownloads)
-                }
-                else{
-                    LocalStorage.addOnChangeListener(function waitForDownloads(storage, changes){
-                        if(storage.gDriveFileDragOperation && storage.gDriveFileDragOperation.draggedFilesCount === storage.gDriveFileDragOperation.foundDownloads.length){
-                            sendResponse(storage.gDriveFileDragOperation.foundDownloads)
-                            LocalStorage.removeOnChangeListener(waitForDownloads)
-                        }
-                    })
-                }
+      LocalStorage.get("gDriveFileDragOperation")
+        .then((gDriveFileDragOperation) => {
+          // if the not all the foundDownloads have been added yet, then wait for them to be set in the storage before sending the response
+          if(gDriveFileDragOperation && gDriveFileDragOperation.draggedFilesCount === gDriveFileDragOperation.foundDownloads.length){
+              sendResponse(gDriveFileDragOperation.foundDownloads)
+          }
+          else{
+            LocalStorage.addOnChangeListener(function waitForDownloads(storage, changes){
+              if(storage.gDriveFileDragOperation && storage.gDriveFileDragOperation.draggedFilesCount === storage.gDriveFileDragOperation.foundDownloads.length){
+                sendResponse(storage.gDriveFileDragOperation.foundDownloads)
+                LocalStorage.removeOnChangeListener(waitForDownloads)
+              }
             })
+          }
+          })
         return true
     }
     if(type === "__EM__GO_TO_PREVIOUS_TAB"){
@@ -115,25 +132,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
-async function onBrowserFileDownload(downloadItem, suggestName){
-
-    console.log("BROWSER FILE DOWNLOAD", downloadItem)
-
-    const gDriveFileDragOperation = await LocalStorage.get("gDriveFileDragOperation")
-    // Make sure to get all of the downloads for all the drive files being dragged.
-    if(gDriveFileDragOperation && !gDriveFileDragOperation.cancelled && gDriveFileDragOperation.draggedFilesCount !== gDriveFileDragOperation.foundDownloads.length){
-        console.log("FOUND G DRIVE DOWNLOAD", downloadItem)
-        // Dont let browser download the file, cancel it and add the downloadItem to storage.gDriveFileDragOperation.foundDownloads
-        chrome.downloads.cancel(downloadItem.id, async () => {
-            chrome.downloads.erase({ id: downloadItem.id });
-            LocalStorage.set((storage) => {
-                return { gDriveFileDragOperation: { ...storage.gDriveFileDragOperation, foundDownloads: [...storage.gDriveFileDragOperation.foundDownloads, downloadItem] } }
-            })
-        });
-    }
-}
-
-async function sendessageToAllTabs(message, exclude=[]){
+async function sendMessageToAllTabs(message, exclude=[]){
 
     const tabs = await getTabs()
     tabs.forEach(function(tab) {
